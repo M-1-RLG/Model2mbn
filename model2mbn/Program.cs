@@ -29,6 +29,7 @@ namespace model2mbn
             {
                 //TODO: Switch mbn types if all vertex attributes are the same for each mesh
                 //TODO: Accept the argument "-s 33.3" as import scale
+
                 Scene scene;
                 H3D bch = new H3D();
                 H3D Anim = new H3D();
@@ -61,20 +62,21 @@ namespace model2mbn
 
                 foreach (var b in bones)
                 {
-                    var h3db = new H3DBone();
-
                     var Ntranslation = new Vector3()//Convert bones to n64 scale
                     {
-                        X = b.Translation.X / 33.3f,
-                        Y = b.Translation.Y / 33.3f,
-                        Z = b.Translation.Z / 33.3f
+                        X = b.Translation.X,
+                        Y = b.Translation.Y,
+                        Z = b.Translation.Z 
                     };
 
-                    h3db.Translation = Ntranslation;
-                    h3db.Scale = b.Scale;
-                    h3db.Rotation = b.Rotation;
-                    h3db.ParentIndex = (short)b.ParentID;
-                    h3db.Name = b.Name;
+                    var h3db = new H3DBone
+                    {
+                        Translation = Ntranslation,
+                        Scale = b.Scale,
+                        Rotation = b.Rotation,
+                        ParentIndex = (short)b.ParentID,
+                        Name = b.Name
+                    };
 
                     BoneNames.Add(b.Name);
                     H3DBones.Add(h3db);
@@ -174,7 +176,7 @@ namespace model2mbn
                         bch.Models[0].Skeleton.Add(new H3DBone()
                         {
                             Name = BName,
-                            Translation = new Vector3(MeshCenter.X / 33.3f, MeshCenter.Y / 33.3f, MeshCenter.Z / 33.3f),
+                            Translation = new Vector3(MeshCenter.X , MeshCenter.Y , MeshCenter.Z ),
                             ParentIndex = (short)BoneNames.IndexOf("Billboard_Master"),
                             Scale = new Vector3(1,1,1)
                         });
@@ -568,9 +570,9 @@ namespace model2mbn
                 foreach (var va in attributes)
                 {
                     if (va.Attribute == AttributeType.Position) {
-                        WriteDataType(f, va, Positions[i].X / 33.3f);//Divide by 33.3 to convert to smash 4 scale
-                        WriteDataType(f, va, Positions[i].Y / 33.3f);
-                        WriteDataType(f, va, Positions[i].Z / 33.3f);
+                        WriteDataType(f, va, Positions[i].X );//Divide by 33.3 to convert to smash 4 scale
+                        WriteDataType(f, va, Positions[i].Y );
+                        WriteDataType(f, va, Positions[i].Z );
                     }
 
                     if (va.Attribute == AttributeType.Normal) {
@@ -743,8 +745,7 @@ namespace model2mbn
         {
             if (scene.Models.Count < 1)
             {
-                var mdl = new H3DModel
-                {
+                var mdl = new H3DModel{
                     Name = "Model",
                     MeshNodesTree = new H3DPatriciaTree()
                 };
@@ -760,15 +761,11 @@ namespace model2mbn
                 scene.Models[0].MeshNodesVisibility.Add(true);
             }
 
-            var list = new List<int>
-            {
-                scene.Models[0].Meshes.Count
-            };
+            var list = new List<int> { scene.Models[0].Meshes.Count };
             H3DMetaData meta = new H3DMetaData
             {
                 //ShapeId is used for mbn mesh sorting
-                new H3DMetaDataValue()
-                {
+                new H3DMetaDataValue(){
                     Name = "ShapeId",
                     Type = H3DMetaDataType.Integer,
                     Values = list
@@ -779,11 +776,7 @@ namespace model2mbn
             H3DMesh mesh = new H3DMesh()
             {
                 NodeIndex = (ushort)scene.Models[0].MeshNodesTree.Find(MeshName),
-                Priority = 0,
                 SubMeshes = new List<H3DSubMesh>(),
-                Type = H3DMeshType.Normal,
-                Layer = 0,
-                MaterialIndex = 0,
                 MetaData = meta,
                 RawBuffer = new byte[0],
                 Parent = scene.Models[0]
@@ -989,17 +982,17 @@ namespace model2mbn
                             {
                                 con.TranslationX.KeyFrames.Add(new KeyFrame()
                                 {
-                                    Value = tran.Value.X / 33.3f,
+                                    Value = tran.Value.X ,
                                     Frame = (float)tran.Time
                                 });
                                 con.TranslationY.KeyFrames.Add(new KeyFrame()
                                 {
-                                    Value = tran.Value.Y / 33.3f,
+                                    Value = tran.Value.Y ,
                                     Frame = (float)tran.Time
                                 });
                                 con.TranslationZ.KeyFrames.Add(new KeyFrame()
                                 {
-                                    Value = tran.Value.Z / 33.3f,
+                                    Value = tran.Value.Z ,
                                     Frame = (float)tran.Time
                                 });
                             }
