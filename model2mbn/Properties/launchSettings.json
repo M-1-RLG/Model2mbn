@@ -1,8 +1,7 @@
 {
   "profiles": {
     "model2mbn": {
-      "commandName": "Project",
-      "commandLineArgs": "\"D:\\Smash 3DS Mods\\Fighters\\A smash 64 mod\\stages\\Kongo_Jungle\\barrel\\test.fbx\""
+      "commandName": "Project"
     }
   }
 }
