@@ -29,7 +29,6 @@ namespace model2mbn
             {
                 //TODO: Switch mbn types if all vertex attributes are the same for each mesh
                 //TODO: Accept the argument "-s 33.3" as import scale
-
                 Scene scene;
                 H3D bch = new H3D();
                 H3D Anim = new H3D();
@@ -64,9 +63,9 @@ namespace model2mbn
                 {
                     var Ntranslation = new Vector3()//Convert bones to n64 scale
                     {
-                        X = b.Translation.X,
-                        Y = b.Translation.Y,
-                        Z = b.Translation.Z 
+                        X = b.Translation.X / 33.3f,
+                        Y = b.Translation.Y / 33.3f,
+                        Z = b.Translation.Z / 33.3f
                     };
 
                     var h3db = new H3DBone
@@ -176,7 +175,7 @@ namespace model2mbn
                         bch.Models[0].Skeleton.Add(new H3DBone()
                         {
                             Name = BName,
-                            Translation = new Vector3(MeshCenter.X , MeshCenter.Y , MeshCenter.Z ),
+                            Translation = new Vector3(MeshCenter.X / 33.3f, MeshCenter.Y / 33.3f, MeshCenter.Z / 33.3f),
                             ParentIndex = (short)BoneNames.IndexOf("Billboard_Master"),
                             Scale = new Vector3(1,1,1)
                         });
@@ -570,9 +569,9 @@ namespace model2mbn
                 foreach (var va in attributes)
                 {
                     if (va.Attribute == AttributeType.Position) {
-                        WriteDataType(f, va, Positions[i].X );//Divide by 33.3 to convert to smash 4 scale
-                        WriteDataType(f, va, Positions[i].Y );
-                        WriteDataType(f, va, Positions[i].Z );
+                        WriteDataType(f, va, Positions[i].X / 33.3f);//Divide by 33.3 to convert to smash 4 scale
+                        WriteDataType(f, va, Positions[i].Y / 33.3f);
+                        WriteDataType(f, va, Positions[i].Z / 33.3f);
                     }
 
                     if (va.Attribute == AttributeType.Normal) {
@@ -982,17 +981,17 @@ namespace model2mbn
                             {
                                 con.TranslationX.KeyFrames.Add(new KeyFrame()
                                 {
-                                    Value = tran.Value.X ,
+                                    Value = tran.Value.X / 33.3f,
                                     Frame = (float)tran.Time
                                 });
                                 con.TranslationY.KeyFrames.Add(new KeyFrame()
                                 {
-                                    Value = tran.Value.Y ,
+                                    Value = tran.Value.Y / 33.3f,
                                     Frame = (float)tran.Time
                                 });
                                 con.TranslationZ.KeyFrames.Add(new KeyFrame()
                                 {
-                                    Value = tran.Value.Z ,
+                                    Value = tran.Value.Z / 33.3f,
                                     Frame = (float)tran.Time
                                 });
                             }
