@@ -23,17 +23,22 @@ namespace model2mbn
 {
     class Program
     {
+        public static float Scale = 1f;
+
         static void Main(string[] args)
         {
             if (args.Count() >= 1)
             {
                 //TODO: Switch mbn types if all vertex attributes are the same for each mesh
-                //TODO: Accept the argument "-s 33.3" as import scale
 
                 Scene scene;
                 H3D bch = new H3D();
                 H3D Anim = new H3D();
                 AssimpContext Importer = new AssimpContext();
+
+                if(args.Count() >= 3)
+                    if (args[1].ToLower() == "-sd")
+                        Scale = float.Parse(args[2]);
 
                 var Flags = PostProcessSteps.None;
                 //Flags |= PostProcessSteps.JoinIdenticalVertices;//I want to keep n64 stages 1:1
@@ -49,24 +54,13 @@ namespace model2mbn
                 var MeshNames = GetMeshNames(scene.RootNode, new List<string>());//Assimp is stupid
                 bool HasBillBoard = false;
 
-                //If the model contains a skeleton the other meshes have to be rigged too
-                foreach (var name in MeshNames)
-                {
-                    if (name.ToLower().Contains("billboard"))
-                    {
-                        HasBillBoard = true;
-                        if (!BoneNames.Contains("Billboard_Master"))
-                            BoneNames.Add("Billboard_Master");
-                    }
-                }
-
                 foreach (var b in bones)
                 {
                     var Ntranslation = new Vector3()//Convert bones to n64 scale
                     {
-                        X = b.Translation.X,
-                        Y = b.Translation.Y,
-                        Z = b.Translation.Z 
+                        X = b.Translation.X / Scale,
+                        Y = b.Translation.Y / Scale,
+                        Z = b.Translation.Z / Scale
                     };
 
                     var h3db = new H3DBone
@@ -107,11 +101,38 @@ namespace model2mbn
                     bmesh.MaterialIndex = (ushort)mesh.MaterialIndex;
                     bmesh.SubMeshes[0].BoneIndicesCount = (ushort)mesh.Bones.Count;
 
+                    //If the model contains a skeleton the other meshes have to be rigged too
+                    foreach (var name in MeshNames)
+                    {
+                        if (name.ToLower().Contains("billboard") && !mesh.HasBones)
+                        {
+                            HasBillBoard = true;
+                            if (!BoneNames.Contains("Billboard_Master"))
+                                BoneNames.Add("Billboard_Master");
+                        }
+                    }
+
 
                     var BIndex = 0;//Bone Index
                     f.writeInt(1);//Submesh count
                     if (mesh.HasBones)
                     {
+                        if(MeshName.ToLower().Contains("billboard"))
+                        {
+                            var MeshCenter = GetMeshCenter(mesh);
+
+                            for (int j = 0; j < mesh.Vertices.Count; j++)
+                            {
+                                var v = mesh.Vertices[j];
+                                var tp = OpenTK.Vector3.TransformPosition(new OpenTK.Vector3(v.X, v.Y, v.Z), OpenTK.Matrix4.CreateTranslation(MeshCenter.X, MeshCenter.Y, MeshCenter.Z).Inverted());
+                                mesh.Vertices[j] = new Vector3D(tp.X, tp.Y, tp.Z);
+                            }
+
+                            var Bone = H3DBones.Find(o => o.Name == mesh.Bones[0].Name);
+                            if(Bone != null)
+                                Bone.BillboardMode = H3DBillboardMode.YAxial;
+                        }
+
                         f.writeInt(mesh.Bones.Count);//BoneTable count
                         float MaxWeight = 0;
 
@@ -176,7 +197,7 @@ namespace model2mbn
                         bch.Models[0].Skeleton.Add(new H3DBone()
                         {
                             Name = BName,
-                            Translation = new Vector3(MeshCenter.X , MeshCenter.Y , MeshCenter.Z ),
+                            Translation = new Vector3(MeshCenter.X / Scale, MeshCenter.Y / Scale, MeshCenter.Z / Scale),
                             ParentIndex = (short)BoneNames.IndexOf("Billboard_Master"),
                             Scale = new Vector3(1,1,1)
                         });
@@ -290,7 +311,9 @@ namespace model2mbn
                     bch.Models[0].Flags = H3DModelFlags.HasSkeleton;
                     foreach (var b in H3DBones)
                     {
+                        var mode = b.BillboardMode;
                         b.CalculateTransform(bch.Models[0].Skeleton);
+                        b.BillboardMode = mode;
                         bch.Models[0].Skeleton.Add(b);
                     }
                 }
@@ -570,9 +593,9 @@ namespace model2mbn
                 foreach (var va in attributes)
                 {
                     if (va.Attribute == AttributeType.Position) {
-                        WriteDataType(f, va, Positions[i].X );//Divide by 33.3 to convert to smash 4 scale
-                        WriteDataType(f, va, Positions[i].Y );
-                        WriteDataType(f, va, Positions[i].Z );
+                        WriteDataType(f, va, Positions[i].X / Scale);//Divide by 33.3 to convert to smash 4 scale
+                        WriteDataType(f, va, Positions[i].Y / Scale);
+                        WriteDataType(f, va, Positions[i].Z / Scale);
                     }
 
                     if (va.Attribute == AttributeType.Normal) {
@@ -941,11 +964,12 @@ namespace model2mbn
 
             if(s.HasNodeAnimations)
             {
-                a.FramesCount = (float)Math.Truncate(s.DurationInTicks);
+                a.FramesCount = GetFrameCount(s);
                 a.AnimationFlags = H3DAnimationFlags.IsLooping;
                 a.AnimationType = H3DAnimationType.Skeletal;
                 a.CurvesCount = 1;
                 a.Name = s.Name;
+
                 foreach (var e in s.NodeAnimationChannels)
                 {
                     if (!UsedNames.Contains(s.Name))
@@ -982,17 +1006,17 @@ namespace model2mbn
                             {
                                 con.TranslationX.KeyFrames.Add(new KeyFrame()
                                 {
-                                    Value = tran.Value.X ,
+                                    Value = tran.Value.X / Scale,
                                     Frame = (float)tran.Time
                                 });
                                 con.TranslationY.KeyFrames.Add(new KeyFrame()
                                 {
-                                    Value = tran.Value.Y ,
+                                    Value = tran.Value.Y / Scale,
                                     Frame = (float)tran.Time
                                 });
                                 con.TranslationZ.KeyFrames.Add(new KeyFrame()
                                 {
-                                    Value = tran.Value.Z ,
+                                    Value = tran.Value.Z / Scale,
                                     Frame = (float)tran.Time
                                 });
                             }
@@ -1073,6 +1097,34 @@ namespace model2mbn
             }
 
             return a;
+        }
+
+        private static float GetFrameCount(Animation s)
+        {
+            double Time = -1;
+
+            foreach (var e in s.NodeAnimationChannels)
+            {
+                foreach(var pos in e.PositionKeys)
+                {
+                    if (pos.Time > Time)
+                        Time = pos.Time;
+                }
+
+                foreach (var rot in e.RotationKeys)
+                {
+                    if (rot.Time > Time)
+                        Time = rot.Time;
+                }
+
+                foreach (var scale in e.ScalingKeys)
+                {
+                    if (scale.Time > Time)
+                        Time = scale.Time;
+                }
+            }
+
+            return (float)Time+1;
         }
 
         private static void SetAnimTransforms(H3DAnimTransform a, float EndFrame)
